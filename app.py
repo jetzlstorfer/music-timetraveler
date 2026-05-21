@@ -1390,6 +1390,14 @@ def _redirect(location: str):
     return _flask_redirect(location, code=302)
 
 
+def _safe_next_path(value: str | None, default: str = "/") -> str:
+    """Allow only local absolute paths for post-auth redirects."""
+    candidate = (value or "").strip()
+    if not candidate.startswith("/") or candidate.startswith("//"):
+        return default
+    return candidate
+
+
 @app.route("/api/spotify/login")
 def spotify_login():
     """Kick off the Authorization Code + PKCE flow."""
@@ -1400,11 +1408,13 @@ def spotify_login():
         }), 503
     state = secrets.token_urlsafe(32)
     verifier, challenge = _spotify_pkce_pair()
+    next_path = _safe_next_path(request.args.get("next"), default="/")
     with SPOTIFY_OAUTH_PENDING_LOCK:
         _cleanup_oauth_states()
         SPOTIFY_OAUTH_PENDING[state] = {
             "code_verifier": verifier,
             "created_at": time.time(),
+            "next_path": next_path,
         }
     from urllib.parse import urlencode
     params = urlencode({
@@ -1428,8 +1438,9 @@ def spotify_callback():
     if not _spotify_oauth_configured():
         return jsonify({"ok": False, "error": "Spotify login is not configured."}), 503
     error = (request.args.get("error") or "").strip()
+    fallback_next = _safe_next_path(request.args.get("next"), default="/")
     if error:
-        return _redirect(f"/?spotify_error={quote(error)}")
+        return _redirect(f"{fallback_next}?spotify_error={quote(error)}")
     code = (request.args.get("code") or "").strip()
     state = (request.args.get("state") or "").strip()
     if not code or not state:
@@ -1442,6 +1453,7 @@ def spotify_callback():
             "ok": False,
             "error": "OAuth state is unknown or expired. Please retry login.",
         }), 400
+    next_path = _safe_next_path((pending or {}).get("next_path"), default=fallback_next)
     try:
         token_resp = _spotify_request_token({
             "grant_type": "authorization_code",
@@ -1495,7 +1507,7 @@ def spotify_callback():
     session_id = secrets.token_urlsafe(32)
     db.create_spotify_session(spotify_user_id, session_id)
     redirect_url = (
-        f"/?spotify_logged_in=1"
+        f"{next_path}?spotify_logged_in=1"
         f"&spotify_profile_id={quote(spotify_user_id, safe='')}"
         f"&spotify_display_name={quote((me_json.get('display_name') or spotify_user_id), safe='')}"
         f"&spotify_avatar_url={quote(avatar_url, safe='')}"
@@ -1830,6 +1842,11 @@ def _spotify_first_listen_payload(profile_id: str, track: str, artist: str) -> d
 
 @app.route("/")
 def index():
+    return send_from_directory("static", "index.html")
+
+
+@app.route("/settings")
+def settings():
     return send_from_directory("static", "index.html")
 
 

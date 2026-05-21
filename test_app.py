@@ -229,6 +229,18 @@ class TestReadiness:
         assert "Database is not ready" in data["error"]
 
 
+class TestPages:
+    def test_index_page_is_served(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert "Music Time Traveler" in resp.get_data(as_text=True)
+
+    def test_settings_page_is_served(self, client):
+        resp = client.get("/settings")
+        assert resp.status_code == 200
+        assert "Music Time Traveler" in resp.get_data(as_text=True)
+
+
 class TestDatabaseInitialization:
     def test_init_db_waits_for_transient_lock(self, tmp_path):
         db_file = str(tmp_path / "startup-lock.db")
@@ -1280,11 +1292,14 @@ def spotify_oauth_env(monkeypatch):
     yield
 
 
-def _login_spotify(client, user_id, *, display_name=None, avatar_url=""):
+def _login_spotify(client, user_id, *, display_name=None, avatar_url="", next_path=None, return_callback=False):
     """Walk the OAuth flow end-to-end with mocked Spotify endpoints."""
     display_name = display_name or user_id
 
-    login_resp = client.get("/api/spotify/login")
+    login_kwargs = {}
+    if next_path is not None:
+        login_kwargs["query_string"] = {"next": next_path}
+    login_resp = client.get("/api/spotify/login", **login_kwargs)
     assert login_resp.status_code == 302
     location = login_resp.headers["Location"]
     from urllib.parse import urlparse, parse_qs
@@ -1314,6 +1329,8 @@ def _login_spotify(client, user_id, *, display_name=None, avatar_url=""):
          patch.object(app_module.requests, "get", return_value=_FakeMeResp()):
         cb = client.get(f"/api/spotify/callback?code=fake-code&state={state}")
     assert cb.status_code == 302, cb.get_data(as_text=True)
+    if return_callback:
+        return cb
     return user_id
 
 
@@ -1415,6 +1432,10 @@ class TestSpotifyOAuth:
         assert profile["display_name"] == "Alice"
         assert profile["refresh_token_encrypted"]
         assert profile["refresh_token_encrypted"] != "refresh-alice"
+
+    def test_callback_redirects_to_requested_settings_page(self, client, spotify_oauth_env):
+        cb = _login_spotify(client, "alice", next_path="/settings", return_callback=True)
+        assert cb.headers["Location"].startswith("/settings?spotify_logged_in=1")
 
     def test_callback_rejects_unknown_state(self, client, spotify_oauth_env):
         resp = client.get("/api/spotify/callback?code=x&state=does-not-exist")

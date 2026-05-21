@@ -1113,7 +1113,13 @@
             <span class="text-3xl sm:text-4xl">🧑‍🚀🕰️</span>
             <a href="/" class="hover:opacity-80 transition-opacity"><h1 class="text-3xl font-bold leading-none sm:text-4xl lg:text-5xl" style="background:linear-gradient(90deg,#d51007,#ff6b6b);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent">Music Time Traveler</h1></a>
           </div>
-          <p class="max-w-lg text-sm leading-6 text-stone-400">
+          <div class="flex items-center gap-2 sm:gap-3">
+            <a href="/" class="ghost-button px-3 py-1.5 text-xs font-medium">Home</a>
+            <a href="/settings" class="ghost-button px-3 py-1.5 text-xs font-medium">Settings</a>
+          </div>
+        </div>
+        <div class="mt-4">
+          <p id="page-subtitle" class="max-w-2xl text-sm leading-6 text-stone-400">
             Find the exact moment a track entered your listening history.
           </p>
         </div>
@@ -1127,7 +1133,7 @@
 
     <main class="flex-1 space-y-6">
       <!-- Profile & Search -->
-      <section class="glass-panel relative z-10 overflow-visible rounded-[2rem] px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
+      <section id="integration-section" class="glass-panel relative z-10 overflow-visible rounded-[2rem] px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
         <div class="mt-2" id="username-section">
           <!-- Spotify import: shown before the Last.fm input. -->
           <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4" id="spotify-card">
@@ -1330,10 +1336,14 @@
 
   <script>
     const searchInput = document.getElementById('search');
+    const isSettingsPage = location.pathname === '/settings';
     const acList = document.getElementById('ac-list');
     const resultCard = document.getElementById('result');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    const integrationSection = document.getElementById('integration-section');
     const configBanner = document.getElementById('config-banner');
     const bannerMsg = document.getElementById('banner-msg');
+    const usernameSection = document.getElementById('username-section');
     const usernameInput = document.getElementById('username-input');
     const connectBtn = document.getElementById('connect-btn');
     const usernameBar = document.getElementById('username-bar');
@@ -1470,6 +1480,23 @@
 
     function placeholderState(message) {
       return `<div class="placeholder-state">${escHtml(message)}</div>`;
+    }
+
+    function applyPageMode() {
+      if (isSettingsPage) {
+        if (pageSubtitle) {
+          pageSubtitle.textContent = 'Manage your Last.fm and Spotify connections in one place.';
+        }
+        searchSection.style.display = 'none';
+        topTracksSection.style.display = 'none';
+        otdSection.style.display = 'none';
+        recentSearchesSection.style.display = 'none';
+        howItWorks.style.display = 'none';
+        resultCard.style.display = 'none';
+        return;
+      }
+      if (integrationSection) integrationSection.style.display = 'none';
+      if (usernameSection) usernameSection.style.display = 'none';
     }
 
     function generateStars() {
@@ -1737,6 +1764,7 @@
     }
 
     (async () => {
+      applyPageMode();
       applySpotifyCallbackHints();
       // Paint last-known state from local storage / cookies synchronously, so
       // a returning user sees both the Spotify profile and the Last.fm
@@ -1912,6 +1940,7 @@
     }
 
     function enterSearchMode() {
+      if (isSettingsPage) return;
       searchSection.classList.add('show');
       howItWorks.style.display = 'none';
     }
@@ -1920,7 +1949,8 @@
       clearSpotifyError();
       // Full-page navigation so the OAuth state cookie / session cookie are
       // set on the same origin without needing CORS gymnastics.
-      window.location.href = '/api/spotify/login';
+      const nextTarget = isSettingsPage ? '/settings' : '/';
+      window.location.href = `/api/spotify/login?next=${encodeURIComponent(nextTarget)}`;
     });
 
     spotifyLogoutBtn.addEventListener('click', async () => {
@@ -2216,6 +2246,7 @@
     periodSelect.addEventListener('change', () => loadTopTracks());
 
     async function loadTopTracks() {
+      if (isSettingsPage) return;
       // Prefer Spotify when connected (more accurate, instant); fall back to Last.fm.
       const useSpotify = spotifyLoggedIn;
       if (!useSpotify && !currentUsername) return;
@@ -2268,6 +2299,7 @@
     }
 
     async function loadOnThisDay() {
+      if (isSettingsPage) return;
       const useSpotify = spotifyLoggedIn;
       if (!useSpotify && !currentUsername) return;
       otdLoading.style.display = 'inline-flex';
@@ -2379,6 +2411,7 @@
     }
 
     async function loadRecentSearches() {
+      if (isSettingsPage) return;
       if (!currentUsername && !spotifyLoggedIn) return;
       try {
         const params = new URLSearchParams();
