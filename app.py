@@ -1847,6 +1847,7 @@ def index():
 
 @app.route("/settings")
 def settings():
+    """Serve the app shell for settings mode (frontend handles page-specific UI)."""
     return send_from_directory("static", "index.html")
 
 

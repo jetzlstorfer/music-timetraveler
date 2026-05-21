@@ -1114,8 +1114,8 @@
             <a href="/" class="hover:opacity-80 transition-opacity"><h1 class="text-3xl font-bold leading-none sm:text-4xl lg:text-5xl" style="background:linear-gradient(90deg,#d51007,#ff6b6b);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent">Music Time Traveler</h1></a>
           </div>
           <div class="flex items-center gap-2 sm:gap-3">
-            <a href="/" class="ghost-button px-3 py-1.5 text-xs font-medium">Home</a>
-            <a href="/settings" class="ghost-button px-3 py-1.5 text-xs font-medium">Settings</a>
+            <a id="home-nav-link" href="/" class="ghost-button px-3 py-1.5 text-xs font-medium">Home</a>
+            <a id="settings-nav-link" href="/settings" class="ghost-button px-3 py-1.5 text-xs font-medium">Settings</a>
           </div>
         </div>
         <div class="mt-4">
@@ -1335,11 +1335,14 @@
   </div>
 
   <script>
+    const PAGE_PATHS = Object.freeze({ home: '/', settings: '/settings' });
     const searchInput = document.getElementById('search');
-    const isSettingsPage = location.pathname === '/settings';
+    const isSettingsPage = location.pathname === PAGE_PATHS.settings;
     const acList = document.getElementById('ac-list');
     const resultCard = document.getElementById('result');
     const pageSubtitle = document.getElementById('page-subtitle');
+    const homeNavLink = document.getElementById('home-nav-link');
+    const settingsNavLink = document.getElementById('settings-nav-link');
     const integrationSection = document.getElementById('integration-section');
     const configBanner = document.getElementById('config-banner');
     const bannerMsg = document.getElementById('banner-msg');
@@ -1483,6 +1486,14 @@
     }
 
     function applyPageMode() {
+      if (homeNavLink) {
+        if (isSettingsPage) homeNavLink.removeAttribute('aria-current');
+        else homeNavLink.setAttribute('aria-current', 'page');
+      }
+      if (settingsNavLink) {
+        if (isSettingsPage) settingsNavLink.setAttribute('aria-current', 'page');
+        else settingsNavLink.removeAttribute('aria-current');
+      }
       if (isSettingsPage) {
         if (pageSubtitle) {
           pageSubtitle.textContent = 'Manage your Last.fm and Spotify connections in one place.';
@@ -1949,7 +1960,7 @@
       clearSpotifyError();
       // Full-page navigation so the OAuth state cookie / session cookie are
       // set on the same origin without needing CORS gymnastics.
-      const nextTarget = isSettingsPage ? '/settings' : '/';
+      const nextTarget = isSettingsPage ? PAGE_PATHS.settings : PAGE_PATHS.home;
       window.location.href = `/api/spotify/login?next=${encodeURIComponent(nextTarget)}`;
     });
 

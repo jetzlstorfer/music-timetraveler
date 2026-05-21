@@ -1437,6 +1437,11 @@ class TestSpotifyOAuth:
         cb = _login_spotify(client, "alice", next_path="/settings", return_callback=True)
         assert cb.headers["Location"].startswith("/settings?spotify_logged_in=1")
 
+    @pytest.mark.parametrize("unsafe_next", ["//evil.com", "https://evil.com/path", "javascript:alert(1)"])
+    def test_callback_rejects_unsafe_next_path(self, client, spotify_oauth_env, unsafe_next):
+        cb = _login_spotify(client, "alice", next_path=unsafe_next, return_callback=True)
+        assert cb.headers["Location"].startswith("/?spotify_logged_in=1")
+
     def test_callback_rejects_unknown_state(self, client, spotify_oauth_env):
         resp = client.get("/api/spotify/callback?code=x&state=does-not-exist")
         assert resp.status_code == 400
