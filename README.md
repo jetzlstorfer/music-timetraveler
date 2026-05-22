@@ -160,17 +160,17 @@ The local SQLite backend has no expiry — data lives until you delete the file 
 
 ```mermaid
 flowchart TD
-  start([User searches for a track]) --> spotify_check{Spotify<br/>connected?<br/>⭐ preferred}
+  start([User searches for a track]) --> spotify_check{"Spotify<br/>connected?<br/>preferred"}
   spotify_check -- yes --> spotify_q[Query spotify_plays<br/>partition = profile_id]
   spotify_q --> spotify_hit{Found?}
-  spotify_hit -- yes --> done_spotify(["Return result<br/>source: spotify ⚡<br/>(instant, complete)"])
-  spotify_check -- no --> lastfm_check{Last.fm<br/>connected?<br/>(fallback)}
+  spotify_hit -- yes --> done_spotify(["Return result<br/>source: spotify<br/>(instant, complete)"])
+  spotify_check -- no --> lastfm_check{"Last.fm<br/>connected?<br/>(fallback)"}
   spotify_hit -- no --> lastfm_check
   lastfm_check -- yes --> cache[Check Last.fm cache]
   cache --> cache_hit{Cached?}
   cache_hit -- yes --> done_cache([Return cached result])
   cache_hit -- no --> api_lookup[track.getInfo →<br/>library scrape →<br/>recent-tracks fallback]
-  api_lookup --> done_lastfm(["Return result<br/>source: lastfm 🎵"])
+  api_lookup --> done_lastfm(["Return result<br/>source: lastfm"])
   lastfm_check -- no --> not_found([Not found])
 
   classDef instant fill:#064e3b,stroke:#10b981,color:#d1fae5
