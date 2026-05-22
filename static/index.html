@@ -1355,6 +1355,7 @@
     const pageSubtitle = document.getElementById('page-subtitle');
     const homeNavLink = document.getElementById('home-nav-link');
     const settingsNavLink = document.getElementById('settings-nav-link');
+    const mainContent = document.querySelector('main');
     const integrationSection = document.getElementById('integration-section');
     const configBanner = document.getElementById('config-banner');
     const bannerMsg = document.getElementById('banner-msg');
@@ -1413,6 +1414,31 @@
     const spotifyUploadBar = document.getElementById('spotify-upload-bar');
     const spotifyStatusEl = document.getElementById('spotify-status');
     const spotifyErrorEl = document.getElementById('spotify-error');
+
+    function placeIntegrationForSettings() {
+      if (!mainContent || !integrationSection || !searchSection) return;
+      mainContent.insertBefore(integrationSection, searchSection);
+    }
+
+    function placeIntegrationForHome() {
+      if (!integrationSection || !howItWorks) return;
+      howItWorks.insertAdjacentElement('afterend', integrationSection);
+    }
+
+    function refreshHomeIntegrationVisibility() {
+      if (isSettingsPage || !integrationSection) return;
+      const shouldShowIntegration = !currentUsername && !spotifyLoggedIn;
+      if (!shouldShowIntegration) {
+        integrationSection.style.display = 'none';
+        return;
+      }
+      placeIntegrationForHome();
+      integrationSection.style.display = '';
+      if (usernameSection) usernameSection.style.display = '';
+      if (pageSubtitle) {
+        pageSubtitle.textContent = 'Connect Last.fm or Spotify to start time-traveling through your listening history.';
+      }
+    }
 
     const loadingScreen = document.getElementById('loading-screen');
     const yearCounter = document.getElementById('year-counter');
@@ -1508,6 +1534,9 @@
         else settingsNavLink.removeAttribute('aria-current');
       }
       if (isSettingsPage) {
+        placeIntegrationForSettings();
+        if (integrationSection) integrationSection.style.display = '';
+        if (usernameSection) usernameSection.style.display = '';
         if (pageSubtitle) {
           pageSubtitle.textContent = 'Manage your Last.fm and Spotify connections in one place.';
         }
@@ -1519,8 +1548,7 @@
         resultCard.style.display = 'none';
         return;
       }
-      if (integrationSection) integrationSection.style.display = 'none';
-      if (usernameSection) usernameSection.style.display = 'none';
+      refreshHomeIntegrationVisibility();
     }
 
     function generateStars() {
@@ -1894,6 +1922,7 @@
         spotifyStats = null;
       }
       renderSpotifyCard();
+      refreshHomeIntegrationVisibility();
       // If we just transitioned to logged-in (cookie restored, OAuth callback,
       // or post-import refresh) and Last.fm isn't already driving the
       // landing-page widgets, populate them from Spotify.
@@ -2000,6 +2029,7 @@
         otdSection.classList.remove('show');
         recentSearchesSection.classList.remove('show');
         howItWorks.style.display = '';
+        refreshHomeIntegrationVisibility();
       } else {
         // Refresh widgets to reflect Last.fm-only data.
         loadTopTracks();
@@ -2215,6 +2245,7 @@
       usernameInput.value = '';
       usernameInput.focus();
       howItWorks.style.display = spotifyLoggedIn ? 'none' : '';
+      refreshHomeIntegrationVisibility();
     }
 
     changeUserBtn.addEventListener('click', () => {
@@ -2259,6 +2290,7 @@
         userProfile.classList.add('show');
         searchSection.classList.add('show');
         howItWorks.style.display = 'none';
+        refreshHomeIntegrationVisibility();
         // Kick off auxiliary loads in parallel — they don't block the search box.
         loadTopTracks();
         loadOnThisDay();
@@ -2290,6 +2322,7 @@
           searchSection.classList.add('show');
           searchInput.focus();
           howItWorks.style.display = 'none';
+          refreshHomeIntegrationVisibility();
 
           loadTopTracks();
           loadOnThisDay();
