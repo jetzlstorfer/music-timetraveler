@@ -164,8 +164,8 @@ flowchart TD
   spotify_check -- yes --> spotify_q[Query spotify_plays<br/>partition = profile_id]
   spotify_q --> spotify_hit{Found?}
   spotify_hit -- yes --> done_spotify(["Return result<br/>source: spotify ⚡<br/>(instant, complete)"])
-  spotify_hit -- no --> lastfm_check
   spotify_check -- no --> lastfm_check{Last.fm<br/>connected?<br/>(fallback)}
+  spotify_hit -- no --> lastfm_check
   lastfm_check -- yes --> cache[Check Last.fm cache]
   cache --> cache_hit{Cached?}
   cache_hit -- yes --> done_cache([Return cached result])
