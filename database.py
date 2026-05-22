@@ -763,6 +763,62 @@ def get_history(username: str) -> list[dict]:
     return _sqlite_get_history(username)
 
 
+def clear_lastfm_data(username: str) -> dict:
+    """Delete all Last.fm rows for *username* and return deletion counts."""
+    normalized = _normalize_lookup_value(username)
+    if not normalized:
+        return {"searches": 0, "artist_first_listens": 0, "total": 0}
+
+    if _use_cosmos_backend():
+        container = _get_cosmos_container()
+        ids = list(container.query_items(
+            query=(
+                "SELECT c.id, c.type FROM c WHERE c.username_normalized = @u "
+                "AND (c.type = 'search' OR c.type = 'artist_first_listen')"
+            ),
+            parameters=[{"name": "@u", "value": normalized}],
+            partition_key=normalized,
+        ))
+        searches = 0
+        artist_first_listens = 0
+        for item in ids:
+            item_type = item.get("type", "")
+            if item_type == "search":
+                searches += 1
+            elif item_type == "artist_first_listen":
+                artist_first_listens += 1
+            try:
+                container.delete_item(item=item["id"], partition_key=normalized)
+            except cosmos_exceptions.CosmosResourceNotFoundError:
+                pass
+        total = searches + artist_first_listens
+        return {
+            "searches": searches,
+            "artist_first_listens": artist_first_listens,
+            "total": total,
+        }
+
+    _sqlite_init_db()
+    with _sqlite_connect() as conn:
+        searches_cur = conn.execute(
+            "DELETE FROM searches WHERE LOWER(username) = LOWER(?)",
+            (username,),
+        )
+        artist_cur = conn.execute(
+            "DELETE FROM artist_first_listens WHERE LOWER(username) = LOWER(?)",
+            (username,),
+        )
+        conn.commit()
+        searches = searches_cur.rowcount or 0
+        artist_first_listens = artist_cur.rowcount or 0
+        total = searches + artist_first_listens
+        return {
+            "searches": searches,
+            "artist_first_listens": artist_first_listens,
+            "total": total,
+        }
+
+
 def get_artist_first_listen(username: str, artist: str) -> dict | None:
     """Return the stored artist first-listen record for *(username, artist)*, or ``None``."""
     if _use_cosmos_backend():

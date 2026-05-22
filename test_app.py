@@ -229,6 +229,18 @@ class TestReadiness:
         assert "Database is not ready" in data["error"]
 
 
+class TestPages:
+    def test_index_page_is_served(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert "Music Time Traveler" in resp.get_data(as_text=True)
+
+    def test_settings_page_is_served(self, client):
+        resp = client.get("/settings")
+        assert resp.status_code == 200
+        assert "Music Time Traveler" in resp.get_data(as_text=True)
+
+
 class TestDatabaseInitialization:
     def test_init_db_waits_for_transient_lock(self, tmp_path):
         db_file = str(tmp_path / "startup-lock.db")
@@ -1280,11 +1292,14 @@ def spotify_oauth_env(monkeypatch):
     yield
 
 
-def _login_spotify(client, user_id, *, display_name=None, avatar_url=""):
+def _login_spotify(client, user_id, *, display_name=None, avatar_url="", next_path=None, return_callback=False):
     """Walk the OAuth flow end-to-end with mocked Spotify endpoints."""
     display_name = display_name or user_id
 
-    login_resp = client.get("/api/spotify/login")
+    login_kwargs = {}
+    if next_path is not None:
+        login_kwargs["query_string"] = {"next": next_path}
+    login_resp = client.get("/api/spotify/login", **login_kwargs)
     assert login_resp.status_code == 302
     location = login_resp.headers["Location"]
     from urllib.parse import urlparse, parse_qs
@@ -1314,6 +1329,8 @@ def _login_spotify(client, user_id, *, display_name=None, avatar_url=""):
          patch.object(app_module.requests, "get", return_value=_FakeMeResp()):
         cb = client.get(f"/api/spotify/callback?code=fake-code&state={state}")
     assert cb.status_code == 302, cb.get_data(as_text=True)
+    if return_callback:
+        return cb
     return user_id
 
 
@@ -1415,6 +1432,15 @@ class TestSpotifyOAuth:
         assert profile["display_name"] == "Alice"
         assert profile["refresh_token_encrypted"]
         assert profile["refresh_token_encrypted"] != "refresh-alice"
+
+    def test_callback_redirects_to_requested_settings_page(self, client, spotify_oauth_env):
+        cb = _login_spotify(client, "alice", next_path="/settings", return_callback=True)
+        assert cb.headers["Location"].startswith("/settings?spotify_logged_in=1")
+
+    @pytest.mark.parametrize("unsafe_next", ["//evil.com", "https://evil.com/path", "javascript:alert(1)"])
+    def test_callback_rejects_unsafe_next_path(self, client, spotify_oauth_env, unsafe_next):
+        cb = _login_spotify(client, "alice", next_path=unsafe_next, return_callback=True)
+        assert cb.headers["Location"].startswith("/?spotify_logged_in=1")
 
     def test_callback_rejects_unknown_state(self, client, spotify_oauth_env):
         resp = client.get("/api/spotify/callback?code=x&state=does-not-exist")
@@ -1559,6 +1585,55 @@ class TestSpotifyAuthEndpoints:
         assert len(results) == 1
         assert results[0]["name"] == "Hello World"
         assert results[0]["source"] == "spotify"
+
+
+class TestLastfmDataEndpoint:
+    def test_clear_lastfm_data_requires_username(self, client):
+        resp = client.delete("/api/user/data")
+        assert resp.status_code == 400
+        body = resp.get_json()
+        assert body["ok"] is False
+
+    def test_clear_lastfm_data_deletes_only_requested_user(self, client):
+        database.save_result(
+            "alice",
+            "Song A",
+            "Artist A",
+            "Album A",
+            "01 Jan 2020",
+            "1577836800",
+            7,
+            "",
+        )
+        database.save_artist_first_listen(
+            "alice",
+            "Artist A",
+            "Song A",
+            "01 Jan 2020",
+            "1577836800",
+        )
+        database.save_result(
+            "bob",
+            "Song B",
+            "Artist B",
+            "Album B",
+            "01 Jan 2021",
+            "1609459200",
+            3,
+            "",
+        )
+
+        resp = client.delete("/api/user/data?username=alice")
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["ok"] is True
+        assert body["deleted"]["searches"] == 1
+        assert body["deleted"]["artist_first_listens"] == 1
+        assert body["deleted"]["total"] == 2
+
+        assert database.get_history("alice") == []
+        assert database.get_artist_first_listen("alice", "Artist A") is None
+        assert len(database.get_history("bob")) == 1
 
 
 # ----- Sync (recently-played) -----
