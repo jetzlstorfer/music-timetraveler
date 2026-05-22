@@ -1207,18 +1207,27 @@
             <div id="spotify-error" class="mt-3 hidden rounded-md border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-200" aria-live="polite"></div>
           </div>
 
-          <div class="mt-4 flex flex-col gap-3 sm:flex-row" id="username-bar">
-            <input id="username-input" class="field-input flex-1 px-4 py-3 text-base" type="text" placeholder="Enter your Last.fm username..." autocomplete="off" />
-            <button id="connect-btn" class="primary-button px-5 py-3 text-sm sm:min-w-36">Connect</button>
-          </div>
-
-          <div class="user-profile show-animate mt-4" id="user-profile">
-            <img id="user-avatar" src="" alt="" />
-            <div class="min-w-0 flex-1">
-              <div class="user-name" id="user-display-name"></div>
-              <div class="user-stats" id="user-stats"></div>
+          <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4" id="lastfm-card">
+            <div class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">Last.fm</div>
+            <div class="mt-1 text-sm text-stone-300">
+              Add your Last.fm username so the app can search your scrobbles, find your first listen for a track, and personalize library stats from your public profile.
             </div>
-            <button class="ghost-button px-4 py-2 text-sm font-medium" id="change-user-btn">Change</button>
+            <div class="mt-2 text-xs text-stone-400">
+              Only your public username is needed. No password or Last.fm API setup is required.
+            </div>
+            <div class="mt-3 flex flex-col gap-3 sm:flex-row" id="username-bar">
+              <input id="username-input" class="field-input flex-1 px-4 py-3 text-base" type="text" placeholder="Enter your Last.fm username..." autocomplete="off" />
+              <button id="connect-btn" class="primary-button px-5 py-3 text-sm sm:min-w-36">Connect</button>
+            </div>
+
+            <div class="user-profile show-animate mt-3" id="user-profile">
+              <img id="user-avatar" src="" alt="" />
+              <div class="min-w-0 flex-1">
+                <div class="user-name" id="user-display-name"></div>
+                <div class="user-stats" id="user-stats"></div>
+              </div>
+              <button class="ghost-button px-4 py-2 text-sm font-medium" id="change-user-btn">Change</button>
+            </div>
           </div>
         </div>
 
