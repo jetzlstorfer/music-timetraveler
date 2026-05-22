@@ -1587,6 +1587,55 @@ class TestSpotifyAuthEndpoints:
         assert results[0]["source"] == "spotify"
 
 
+class TestLastfmDataEndpoint:
+    def test_clear_lastfm_data_requires_username(self, client):
+        resp = client.delete("/api/user/data")
+        assert resp.status_code == 400
+        body = resp.get_json()
+        assert body["ok"] is False
+
+    def test_clear_lastfm_data_deletes_only_requested_user(self, client):
+        database.save_result(
+            "alice",
+            "Song A",
+            "Artist A",
+            "Album A",
+            "01 Jan 2020",
+            "1577836800",
+            7,
+            "",
+        )
+        database.save_artist_first_listen(
+            "alice",
+            "Artist A",
+            "Song A",
+            "01 Jan 2020",
+            "1577836800",
+        )
+        database.save_result(
+            "bob",
+            "Song B",
+            "Artist B",
+            "Album B",
+            "01 Jan 2021",
+            "1609459200",
+            3,
+            "",
+        )
+
+        resp = client.delete("/api/user/data?username=alice")
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["ok"] is True
+        assert body["deleted"]["searches"] == 1
+        assert body["deleted"]["artist_first_listens"] == 1
+        assert body["deleted"]["total"] == 2
+
+        assert database.get_history("alice") == []
+        assert database.get_artist_first_listen("alice", "Artist A") is None
+        assert len(database.get_history("bob")) == 1
+
+
 # ----- Sync (recently-played) -----
 
 

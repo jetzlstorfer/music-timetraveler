@@ -1942,6 +1942,31 @@ def validate_user():
         return jsonify({"ok": False, "error": f"Last.fm API error: {exc}"}), 200
 
 
+@app.route("/api/user/data", methods=["DELETE"])
+def clear_user_data():
+    """Disconnect Last.fm user context and wipe stored Last.fm data."""
+    username = (request.args.get("username") or "").strip()
+    if not username:
+        return jsonify({"ok": False, "error": "username is required"}), 400
+
+    deleted = db.clear_lastfm_data(username)
+
+    normalized_username = normalize_lastfm_text(username)
+    with LISTENING_HISTORY_CACHE_LOCK:
+        to_delete = [
+            key for key in LISTENING_HISTORY_CACHE.keys()
+            if key.startswith(normalized_username + "|")
+        ]
+        for key in to_delete:
+            LISTENING_HISTORY_CACHE.pop(key, None)
+
+    return jsonify({
+        "ok": True,
+        "deleted": deleted,
+        "cache_entries_cleared": len(to_delete),
+    })
+
+
 @app.route("/api/user/top-tracks")
 def user_top_tracks():
     """Get a user's top tracks for suggestions.
