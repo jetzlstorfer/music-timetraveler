@@ -29,6 +29,12 @@ param spotifyRedirectUri string = ''
 @secure()
 param spotifyTokenEncryptionKey string = ''
 
+@description('Custom domain hostname to bind to the Container App (e.g. musictimetraveler.jetzlstorfer.org). Leave empty to skip custom domain binding.')
+param customDomainName string = ''
+
+@description('Resource ID of the managed certificate in the Container Apps Environment for the custom domain. Leave empty to skip custom domain binding.')
+param customDomainCertificateId string = ''
+
 var normalizedEnvironmentName = toLower(replace(replace(environmentName, '_', '-'), ' ', '-'))
 var compactEnvironmentName = take(toLower(replace(replace(replace(replace(environmentName, '-', ''), '_', ''), ' ', ''), '.', '')), 41)
 var acrName = 'acr${compactEnvironmentName}${take(resourceToken, 6)}'
@@ -46,6 +52,7 @@ var cosmosContainerName = 'searches'
 // fail provisioning.
 var spotifyConfigured = !empty(spotifyClientId) && !empty(spotifyClientSecret) && !empty(spotifyRedirectUri) && !empty(spotifyTokenEncryptionKey)
 var lastfmConfigured = !empty(lastfmApiKey)
+var customDomainConfigured = !empty(customDomainName) && !empty(customDomainCertificateId)
 
 // ---------------------------------------------------------------------------
 // Log Analytics Workspace (required by Container Apps Environment)
@@ -242,6 +249,13 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         external: true
         targetPort: 5000
         transport: 'auto'
+        customDomains: customDomainConfigured ? [
+          {
+            name: customDomainName
+            bindingType: 'SniEnabled'
+            certificateId: customDomainCertificateId
+          }
+        ] : []
       }
       registries: [
         {

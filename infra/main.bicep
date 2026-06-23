@@ -27,6 +27,12 @@ param spotifyRedirectUri string = ''
 @secure()
 param spotifyTokenEncryptionKey string = ''
 
+@description('Custom domain hostname to bind to the Container App (e.g. musictimetraveler.jetzlstorfer.org). Leave empty to skip.')
+param customDomainName string = ''
+
+@description('Resource ID of the managed certificate in the Container Apps Environment for the custom domain. Leave empty to skip.')
+param customDomainCertificateId string = ''
+
 var tags = { 'azd-env-name': environmentName }
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 
@@ -49,6 +55,8 @@ module resources 'resources.bicep' = {
     spotifyClientSecret: spotifyClientSecret
     spotifyRedirectUri: spotifyRedirectUri
     spotifyTokenEncryptionKey: spotifyTokenEncryptionKey
+    customDomainName: customDomainName
+    customDomainCertificateId: customDomainCertificateId
   }
 }
 

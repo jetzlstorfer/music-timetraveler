@@ -22,6 +22,12 @@
     },
     "spotifyTokenEncryptionKey": {
       "value": "${SPOTIFY_TOKEN_ENCRYPTION_KEY}"
+    },
+    "customDomainName": {
+      "value": "${CUSTOM_DOMAIN_NAME}"
+    },
+    "customDomainCertificateId": {
+      "value": "${CUSTOM_DOMAIN_CERTIFICATE_ID}"
     }
   }
 }
