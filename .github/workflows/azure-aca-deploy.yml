@@ -45,6 +45,8 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REDIRECT_URI: ${{ vars.SPOTIFY_REDIRECT_URI }}
           SPOTIFY_TOKEN_ENCRYPTION_KEY: ${{ secrets.SPOTIFY_TOKEN_ENCRYPTION_KEY }}
+          CUSTOM_DOMAIN_NAME: ${{ vars.CUSTOM_DOMAIN_NAME }}
+          CUSTOM_DOMAIN_CERTIFICATE_ID: ${{ vars.CUSTOM_DOMAIN_CERTIFICATE_ID }}
 
       - name: Deploy Application
         run: azd deploy --no-prompt
