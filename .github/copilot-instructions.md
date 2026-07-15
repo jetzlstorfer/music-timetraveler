@@ -8,8 +8,14 @@ python app.py              # dev server on :5000
 make dev                   # Flask debug mode
 ```
 
-## Testing
+## Testing and Linting
 
+**Lint with Ruff:**
+```bash
+make lint                  # or: ruff check app.py database.py test_app.py
+```
+
+**Run tests:**
 ```bash
 make test                  # or: pytest
 pytest test_app.py::TestFirstListen::test_first_listen_returns_result   # single test

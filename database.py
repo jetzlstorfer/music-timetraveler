@@ -16,10 +16,11 @@ import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 try:
-    from azure.cosmos import CosmosClient, PartitionKey, exceptions as cosmos_exceptions
+    from azure.cosmos import CosmosClient, PartitionKey
+    from azure.cosmos import exceptions as cosmos_exceptions
 except ImportError:
     CosmosClient = None
     PartitionKey = None

@@ -1,9 +1,7 @@
 """Tests for the Last.fm Time Traveler app."""
 
 import json
-import os
 import sqlite3
-import tempfile
 import threading
 import time
 from unittest.mock import patch
@@ -11,8 +9,8 @@ from urllib.parse import unquote
 
 import pytest
 
-import database
 import app as app_module
+import database
 from app import app
 
 
@@ -839,7 +837,6 @@ class TestListeningHistory:
             assert resp.get_json() == []
 
     def test_returns_monthly_play_counts(self, client):
-        import calendar
         from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc)
@@ -1042,7 +1039,7 @@ class TestArtistFirstListenEndpoint:
             "testuser", "Weezer",
             "Buddy Holly", "10 Jan 2005, 15:00", "1105368000",
         )
-        with patch.object(app_module, "lastfm_get") as mock_get, \
+        with patch.object(app_module, "lastfm_get") as _mock_get, \
              patch.object(app_module, "public_library_artist_first_listen") as mock_lib:
             resp = client.get("/api/artist-first-listen?username=testuser&artist=Weezer")
         assert resp.status_code == 200
@@ -1265,8 +1262,8 @@ class TestArtistFirstListenAutoUpdate:
 # ---------------------------------------------------------------------------
 
 import io as _io  # noqa: E402
-from datetime import timedelta as _td  # noqa: E402
 import zipfile  # noqa: E402
+from datetime import timedelta as _td  # noqa: E402
 
 # Stable Fernet key for tests (32-byte url-safe base64). The real value comes
 # from SPOTIFY_TOKEN_ENCRYPTION_KEY in production.
@@ -1302,7 +1299,7 @@ def _login_spotify(client, user_id, *, display_name=None, avatar_url="", next_pa
     login_resp = client.get("/api/spotify/login", **login_kwargs)
     assert login_resp.status_code == 302
     location = login_resp.headers["Location"]
-    from urllib.parse import urlparse, parse_qs
+    from urllib.parse import parse_qs, urlparse
     qs = parse_qs(urlparse(location).query)
     state = qs["state"][0]
 
@@ -1407,7 +1404,7 @@ class TestSpotifyOAuth:
         assert resp.status_code == 302
         loc = resp.headers["Location"]
         assert loc.startswith(app_module.SPOTIFY_OAUTH_AUTHORIZE_URL)
-        from urllib.parse import urlparse, parse_qs
+        from urllib.parse import parse_qs, urlparse
         qs = parse_qs(urlparse(loc).query)
         assert qs["client_id"] == ["test-client-id"]
         assert qs["response_type"] == ["code"]
@@ -1707,14 +1704,16 @@ class TestSpotifyFirstListen:
         assert data["found"] is True
         assert data["source"] == "spotify"
         assert data["total_scrobbles"] == 3
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         assert _dt.fromtimestamp(int(data["timestamp"]), tz=_tz.utc).year == 2010
 
     def test_first_listen_uses_lastfm_when_username_present(self, client, spotify_oauth_env):
         """When a Last.fm username is provided the Spotify timestamp is used as a
         hint but Last.fm metadata (scrobble count, canonical names, album art)
         is fetched via the background lookup."""
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         _login_spotify(client, "spuser2")
         # Spotify history has 2 plays; Last.fm reports 23.
         spotify_ts = int(_dt(2010, 3, 4, 8, 0, 0, tzinfo=_tz.utc).timestamp())
@@ -1855,7 +1854,8 @@ class TestSpotifyTopTracks:
         # Use distinct timestamps within the last 30 days so they fall in the
         # default 1-month window AND survive the (profile, played_at, track,
         # artist) dedup index.
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         now = _dt.now(_tz.utc)
         recent_a = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         recent_b = (now - _td(seconds=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1866,7 +1866,7 @@ class TestSpotifyTopTracks:
             _spotify_entry(recent_c, track="Filler", artist="Band"),
         ])
         resp = client.get(
-            f"/api/user/top-tracks?profile_id=topper&period=1month"
+            "/api/user/top-tracks?profile_id=topper&period=1month"
         )
         assert resp.status_code == 200
         items = resp.get_json()
@@ -1877,7 +1877,8 @@ class TestSpotifyTopTracks:
 
     def test_session_cookie_is_sufficient(self, client, spotify_oauth_env):
         _login_spotify(client, "cookietopper")
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         recent = _dt.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         _spotify_upload(client, [
             _spotify_entry(recent, track="Solo", artist="Band"),
@@ -1921,7 +1922,8 @@ class TestSpotifyOnThisDay:
     def test_returns_plays_from_same_calendar_day_in_past(self, client, spotify_oauth_env):
         _login_spotify(client, "otd")
         # Use today's date but one and two years ago.
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         now = _dt.now(_tz.utc)
         try:
             one_year_ago = now.replace(year=now.year - 1, hour=12, minute=0, second=0, microsecond=0)
@@ -1990,7 +1992,8 @@ class TestSpotifyHistory:
 class TestSpotifyListeningHistory:
     def test_returns_monthly_play_counts(self, client, spotify_oauth_env):
         _login_spotify(client, "lhuser")
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
         now = _dt.now(_tz.utc)
         # Two plays this month (distinct timestamps to survive dedup), one last month.
         this_month_a = now.strftime("%Y-%m-%dT12:00:00Z")

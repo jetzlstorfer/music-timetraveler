@@ -94,8 +94,14 @@ The `/api/status` and `/api/ready` health endpoints are healthy as long as **at 
 
 Open this repo in VS Code with the Dev Containers extension — it will auto-create the venv and install dependencies.
 
-### Running tests
+### Running tests and linting
 
+**Lint with Ruff:**
+```bash
+make lint
+```
+
+**Run tests:**
 ```bash
 make test
 ```

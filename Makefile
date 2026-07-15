@@ -1,4 +1,4 @@
-.PHONY: install run dev test clean
+.PHONY: install run dev test lint clean
 
 install:
 	pip install -r requirements.txt
@@ -11,6 +11,9 @@ dev:
 
 test:
 	pytest
+
+lint:
+	ruff check app.py database.py test_app.py
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

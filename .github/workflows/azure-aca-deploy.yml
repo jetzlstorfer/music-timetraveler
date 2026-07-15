@@ -20,6 +20,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        run: make lint
+
+      - name: Run tests
+        run: make test
+
       - name: Install azd
         uses: azure/setup-azd@v2
 
