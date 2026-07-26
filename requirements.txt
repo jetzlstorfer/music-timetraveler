@@ -6,4 +6,4 @@ azure-cosmos==4.16.2
 cryptography==49.0.0
 pytest==9.1.1
 ijson==3.5.1
-ruff==0.15.22
+ruff==0.16.0
