@@ -15,6 +15,9 @@ jobs:
     name: Provision and Deploy
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: azure-deploy-${{ vars.AZURE_ENV_NAME }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
