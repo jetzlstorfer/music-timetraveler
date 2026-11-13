@@ -4,6 +4,8 @@ Find the very first time you listened to any song — powered by your **Spotify 
 
 Log in with Spotify (or connect Last.fm), type a song title, pick from the autocomplete suggestions, and discover when you first played it, plus how many times since.
 
+![Music Time Traveler app screenshot](docs/images/music-time-traveler.png)
+
 [![Lint and Build](https://github.com/jetzlstorfer/music-timetraveler/actions/workflows/lint-build.yml/badge.svg)](https://github.com/jetzlstorfer/music-timetraveler/actions/workflows/lint-build.yml)
 ![Python](https://img.shields.io/badge/Python-Flask-blue)
 
